@@ -17,14 +17,14 @@
         {
           id: 0,
           name: ['Pedro', 'Antonio'],
-          familyName: ['Ramirez', 'Rivas'],
+          family_name: ['Ramirez', 'Rivas'],
           spouses: [1],
           root: true,
         },
         {
           id: 1,
           name: ['Eleonora', 'del Carmen'],
-          familyName: ['Grullon'],
+          family_name: ['Grullon'],
         },
         {
           id: 2,
@@ -34,13 +34,13 @@
         {
           id: 3,
           name: ['Juan', 'de Jesus'],
+          family_name: ['Juana'],
           parents: [0, 1],
         },
         {
           id: 4,
           alias: 'Mama Julia',
           name: ['Ana', 'Julia'],
-          familyName: ['Ana', 'Maria'],
           foster_parents: [0, 1],
         },
         {
@@ -57,15 +57,18 @@
 
       function getFamilyName(familyName, parents) {
         const hasOneParent = parents?.length < 2
+        const hasParents = parents?.length > 0
 
         if (familyName) {
           return familyName
         } else if (!familyName && hasOneParent) {
-          return getPerson(parents[0])?.familyName
-        } else {
+          return getPerson(parents[0])?.family_name
+        } else if (!familyName && hasParents) {
           return parents.map(parent => {
-            return getPerson(parent)?.familyName?.[0]
+            return getPerson(parent)?.family_name?.[0]
           })
+        } else {
+          return []
         }
       }
 
@@ -90,6 +93,7 @@
             return hasCurrentPersonAsFosterParent
           })
           .map(person => spreadData(person))
+
         return result?.length > 0 ? result : undefined
       }
 
@@ -99,7 +103,8 @@
             const isSamePerson = person?.id === id
             const hasSameParents =
               person?.parents?.toString() === parents?.toString()
-            return !isSamePerson && hasSameParents
+            const hasParents = person?.parents?.length > 0
+            return !isSamePerson && hasSameParents && hasParents
           })
           .map(person => spreadData(person, false))
 
@@ -152,7 +157,7 @@
         const spouses = getSpouses(person?.spouses)
         const parents = getParents(person?.parents)
         const foster_parents = getFosterParents(person?.foster_parents)
-        const familyName = getFamilyName(person?.familyName, person?.parents)
+        const family_name = getFamilyName(person?.family_name, person?.parents)
 
         let children, siblings, half_siblings, foster_children
 
@@ -166,7 +171,7 @@
         return {
           id: person?.id,
           name: person?.name,
-          familyName,
+          family_name,
           ...(person?.alias && { alias: person.alias }),
           ...(deep && {
             root: person?.root,
@@ -174,6 +179,7 @@
               ...(spouses && { spouses }),
               ...(parents && { parents }),
               ...(foster_parents && { foster_parents }),
+              ...(foster_children && { foster_children }),
               ...(children && { children }),
               ...(siblings && { siblings }),
               ...(half_siblings && { half_siblings }),
@@ -205,7 +211,7 @@
 
       const family = getRoot(familyBase)
 
-      console.log(family)
+      console.log(family[0])
 
       document.getElementById('output').innerHTML = JSON.stringify(
         family,
