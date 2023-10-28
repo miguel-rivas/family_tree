@@ -1,5 +1,12 @@
 <html>
-  <head> </head>
+  <head>
+	<style>
+		html, body {
+			background: #222;
+			color: #ccc;
+		}
+	</style>
+  </head>
   <body>
     <pre id="output"></pre>
     <script>
@@ -57,14 +64,11 @@
       }
 
       function getChildren(id) {
-        return familyEntries.filter(person => {
-          return person.parents?.filter(parent => {
-            const isCurrentPersonParent = person?.parents?.some(
-              currentPersonParent => currentPersonParent === parent
-            )
-            return !isCurrentPersonParent && parent === person.id
+        return familyEntries
+          .filter(person => {
+            return person?.parents?.some(parent => parent === id)
           })
-        }).map(spreadData)
+          .map(spreadData)
       }
 
       let counter = 0
@@ -75,10 +79,10 @@
         const familyName = getFamilyName(person?.familyName, person?.parents)
 
         let children
-        if (counter < 100) {
-          counter++
+        // if (counter < 5) {
+        //   counter++
           children = getChildren(person?.id)
-        }
+        // }
 
         return {
           id: person?.id,
