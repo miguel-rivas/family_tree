@@ -1,11 +1,12 @@
 <html>
   <head>
-	<style>
-		html, body {
-			background: #222;
-			color: #ccc;
-		}
-	</style>
+    <style>
+      html,
+      body {
+        background: #222;
+        color: #ccc;
+      }
+    </style>
   </head>
   <body>
     <pre id="output"></pre>
@@ -45,7 +46,7 @@
           id: 5,
           alias: 'Amable',
           name: ['Amable'],
-          parents: [0, 1],
+          parents: [0],
         },
       ]
 
@@ -54,73 +55,118 @@
       }
 
       function getFamilyName(familyName, parents) {
-        let family = familyName
-        if (!family) {
-          family = parents.map(parent => {
+        const hasOneParent = parents?.length < 2
+
+        if (familyName) {
+          return familyName
+        } else if (!familyName && hasOneParent) {
+          return getPerson(parents[0])?.familyName
+        } else {
+          return parents.map(parent => {
             return getPerson(parent)?.familyName?.[0]
           })
         }
-        return family
       }
 
       function getChildren(id) {
         return familyEntries
           .filter(person => {
-            return person?.parents?.some(parent => parent === id)
+            const hasCurrentPersonAsParent = person?.parents?.some(
+              parent => parent === id
+            )
+            return hasCurrentPersonAsParent
           })
-          .map(spreadData)
+          .map(person => spreadData(person))
+      }
+
+      function getSiblings(id, parents) {
+        return familyEntries
+          .filter(person => {
+            const isSamePerson = person?.id === id
+            const hasSameParents =
+              person?.parents?.toString() === parents?.toString()
+            return !isSamePerson && hasSameParents
+          })
+          .map(person => spreadData(person, false))
+      }
+
+      function getHalfSiblings(id, currentPersonParents) {
+        return familyEntries
+          .filter(person => {
+            const isSamePerson = person?.id === id
+            const hasSameParents =
+              person?.parents?.toString() === currentPersonParents?.toString()
+            const hasOneParent = person?.parents?.some(parent =>
+              currentPersonParents?.some(
+                currentPersonParent => currentPersonParent === parent
+              )
+            )
+            return !isSamePerson && !hasSameParents && hasOneParent
+          })
+          .map(person => spreadData(person, false))
       }
 
       let counter = 0
 
-      function spreadData(person) {
-        const spouses = person?.spouses?.map(getPerson)
-        const parents = person?.parents?.map(getPerson)
+      function spreadData(person, deep = true) {
+        const spouses = person?.spouses
+          ?.map(getPerson)
+          .map(person => spreadData(person, false))
+        const parents = person?.parents
+          ?.map(getPerson)
+          .map(person => spreadData(person, false))
         const familyName = getFamilyName(person?.familyName, person?.parents)
 
-        let children
-        // if (counter < 5) {
-        //   counter++
+        let children, siblings, half_siblings
+
+        if (deep) {
+          siblings = getSiblings(person?.id, person?.parents)
+          half_siblings = getHalfSiblings(person?.id, person?.parents)
           children = getChildren(person?.id)
-        // }
+        }
 
         return {
           id: person?.id,
           name: person?.name,
           familyName,
           alias: person?.alias,
-          relationships: {
-            spouses,
-            parents,
-            children,
-            // siblings,
+          ...(deep && {
+            root: person?.root,
+            relationships: {
+              spouses,
+              parents,
+              children,
+              siblings,
+              half_siblings,
 
-            // nephews_nieces
-            // uncles_aunts,
+              // nephews_nieces
+              // uncles_aunts,
 
-            // first_cousins,
-            // second_cousins,
+              // first_cousins,
+              // second_cousins,
 
-            // parents_first_cousins,
-            // parents_second_cousins,
+              // parents_first_cousins,
+              // parents_second_cousins,
 
-            // grandparents,
-            // granduncle_grandaunt,
+              // grandparents,
+              // granduncle_grandaunt,
 
-            // greatgrandparents,
-            // greatduncle_greataunt
-          },
-          root: person?.root,
+              // greatgrandparents,
+              // greatduncle_greataunt
+            },
+          }),
         }
       }
 
-      const familyBase = familyEntries.map(spreadData)
+      const familyBase = familyEntries.map(person => spreadData(person))
 
       function getRoot(familyBase) {
         return familyBase.filter(person => person?.root)
       }
 
       const family = getRoot(familyBase)
+
+      console.log(family)
 
       document.getElementById('output').innerHTML = JSON.stringify(
         family,
