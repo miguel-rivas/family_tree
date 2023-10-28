@@ -16,38 +16,48 @@
       const familyEntries = [
         {
           id: 0,
-          name: ['Pedro', 'Antonio'],
-          family_name: ['Ramirez', 'Rivas'],
+          name: ['Papa'],
+          family_name: ['Familia 1', 'Familia 2'],
           spouses: [1],
           root: true,
         },
         {
           id: 1,
-          name: ['Eleonora', 'del Carmen'],
-          family_name: ['Grullon'],
+          name: ['Mama'],
+          family_name: ['Familia 3', 'Familia 4'],
         },
         {
           id: 2,
-          name: ['Pedro', 'Antonio'],
+          name: ['Hijo 1'],
           parents: [0, 1],
         },
         {
           id: 3,
-          name: ['Juan', 'de Jesus'],
-          family_name: ['Juana'],
+          name: ['Hijo Otro Apellido'],
+          family_name: ['Familia 5'],
+          parents: [0, 1],
+        },
+        {
+          id: 7,
+          name: ['Hermano'],
           parents: [0, 1],
         },
         {
           id: 4,
-          alias: 'Mama Julia',
-          name: ['Ana', 'Julia'],
+          alias: 'Apodo',
+          name: ['Hijo acogido sin apellido'],
           foster_parents: [0, 1],
         },
         {
           id: 5,
-          alias: 'Amable',
-          name: ['Amable'],
+          name: ['Hijo de un padre'],
+          prefered_name: 'Nombre Cool',
           parents: [0],
+        },
+        {
+          id: 6,
+          name: ['Sobrino'],
+          parents: [2],
         },
       ]
 
@@ -153,16 +163,41 @@
         return result?.length > 0 ? result : undefined
       }
 
+      function getNephewsAndNieces(siblings) {
+        const result = familyEntries
+          .filter(person =>
+            siblings?.some(sibling =>
+              person?.parents?.some(parent => parent === sibling.id)
+            )
+          )
+          .map(nephew_niece => {
+            const family_name = siblings.filter(sibling =>
+              nephew_niece?.parents.some(parent => {
+                return sibling.id === parent
+              })
+            )[0].family_name
+
+            return {
+              name: nephew_niece?.name,
+              family_name,
+            }
+          })
+        // unreachable last name since the entries doesn't actually have them
+        // .map(person => spreadData(person, false))
+
+        return result?.length > 0 ? result : undefined
+      }
+
       function spreadData(person, deep = true) {
         const spouses = getSpouses(person?.spouses)
         const parents = getParents(person?.parents)
         const foster_parents = getFosterParents(person?.foster_parents)
         const family_name = getFamilyName(person?.family_name, person?.parents)
-
-        let children, siblings, half_siblings, foster_children
+        let children, siblings, half_siblings, foster_children, nephews_nieces
 
         if (deep) {
           siblings = getSiblings(person?.id, person?.parents)
+          nephews_nieces = getNephewsAndNieces(siblings)
           half_siblings = getHalfSiblings(person?.id, person?.parents)
           children = getChildren(person?.id)
           foster_children = getFosterChildren(person?.id)
@@ -171,10 +206,11 @@
         return {
           id: person?.id,
           name: person?.name,
+          ...(person?.prefered_name && { prefered_name: person.prefered_name }),
           family_name,
+          ...(person?.root && { root: person.root }),
           ...(person?.alias && { alias: person.alias }),
           ...(deep && {
-            root: person?.root,
             relationships: {
               ...(spouses && { spouses }),
               ...(parents && { parents }),
@@ -183,19 +219,16 @@
               ...(children && { children }),
               ...(siblings && { siblings }),
               ...(half_siblings && { half_siblings }),
+              ...(nephews_nieces && { nephews_nieces }),
 
               // nephews_nieces
               // uncles_aunts,
-
               // first_cousins,
               // second_cousins,
-
               // parents_first_cousins,
               // parents_second_cousins,
-
               // grandparents,
               // granduncle_grandaunt,
-
               // greatgrandparents,
               // greatduncle_greataunt
             },
