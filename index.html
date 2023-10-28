@@ -1,0 +1,114 @@
+console.clear()
+
+const familyEntries = [
+	{
+		id: 0,
+		name: ["Pedro", "Antonio"],
+		familyName: ["Ramirez", "Rivas"],
+		spouses: [1],
+		root: true,
+	},
+	{
+		id: 1,
+		name: ["Eleonora", "del Carmen"],
+		familyName: ["Grullon"],
+	},
+	{
+		id: 2,
+		name: ["Pedro", "Antonio"],
+		parents: [0,1],
+	},
+	{
+		id: 3,
+		name: ["Juan", "de Jesus"],
+		parents: [0,1],
+	},
+	{
+		id: 4,
+		alias: "Mama Julia",
+		name: ["Ana", "Julia"],
+		parents: [0,1],
+	},
+	{
+		id: 5,
+		alias: "Amable",
+		name: ["Amable"],
+		parents: [0,1],
+	},
+]
+
+function getPerson(id) {
+	return familyEntries.filter(item => item.id === id)[0]
+}
+
+function getFamilyName(familyName, parents) {
+	let family = familyName
+	if(!family) {
+		family = parents.map(parent => {
+			return getPerson(parent)?.familyName?.[0]
+		})
+	}
+	return family
+}
+
+function getChildren(id) {
+	return familyEntries.filter(person => {
+		return person.parents?.filter(parent => {
+			const isCurrentPersonParent = person?.parents?.some(currentPersonParent => currentPersonParent === parent)
+			return !isCurrentPersonParent && parent === person.id
+		})
+	})//.map(spreadData)
+}
+
+let counter = 0
+
+function spreadData(person) {
+	const spouses = person?.spouses?.map(getPerson)
+	const parents = person?.parents?.map(getPerson)
+	const familyName = getFamilyName(person?.familyName, person?.parents)
+	
+	let children
+	if(counter < 100){
+		counter++
+		children = getChildren(person?.id)
+	}
+	
+	return {
+		id: person?.id,
+		name: person?.name,
+		familyName,
+		alias: person?.alias,
+		relationships: {
+			spouses,
+			parents,
+			children,
+			// siblings,
+			
+			// nephews_nieces
+			// uncles_aunts,
+			
+			// first_cousins,
+			// second_cousins,
+			
+			// parents_first_cousins,
+			// parents_second_cousins,
+			
+			// grandparents,
+			// granduncle_grandaunt,
+			
+			// greatgrandparents,
+			// greatduncle_greataunt
+		},
+		root: person?.root
+	}	
+}
+
+const familyBase = familyEntries.map(spreadData)
+
+function getRoot(familyBase){
+	return familyBase.filter(person => person?.root)
+}
+
+const family = getRoot(familyBase)
+
+console.log(family)
