@@ -40,7 +40,8 @@
           id: 4,
           alias: 'Mama Julia',
           name: ['Ana', 'Julia'],
-          parents: [0, 1],
+          familyName: ['Ana', 'Maria'],
+          foster_parents: [0, 1],
         },
         {
           id: 5,
@@ -69,7 +70,7 @@
       }
 
       function getChildren(id) {
-        return familyEntries
+        let result = familyEntries
           .filter(person => {
             const hasCurrentPersonAsParent = person?.parents?.some(
               parent => parent === id
@@ -77,10 +78,23 @@
             return hasCurrentPersonAsParent
           })
           .map(person => spreadData(person))
+        return result?.length > 0 ? result : undefined
+      }
+
+      function getFosterChildren(id) {
+        let result = familyEntries
+          .filter(person => {
+            const hasCurrentPersonAsFosterParent = person?.foster_parents?.some(
+              parent => parent === id
+            )
+            return hasCurrentPersonAsFosterParent
+          })
+          .map(person => spreadData(person))
+        return result?.length > 0 ? result : undefined
       }
 
       function getSiblings(id, parents) {
-        return familyEntries
+        let result = familyEntries
           .filter(person => {
             const isSamePerson = person?.id === id
             const hasSameParents =
@@ -88,10 +102,12 @@
             return !isSamePerson && hasSameParents
           })
           .map(person => spreadData(person, false))
+
+        return result?.length > 0 ? result : undefined
       }
 
       function getHalfSiblings(id, currentPersonParents) {
-        return familyEntries
+        const result = familyEntries
           .filter(person => {
             const isSamePerson = person?.id === id
             const hasSameParents =
@@ -104,40 +120,63 @@
             return !isSamePerson && !hasSameParents && hasOneParent
           })
           .map(person => spreadData(person, false))
+
+        return result?.length > 0 ? result : undefined
       }
 
-      let counter = 0
+      function getSpouses(spouses) {
+        const result = spouses
+          ?.map(getPerson)
+          .map(person => spreadData(person, false))
+
+        return result?.length > 0 ? result : undefined
+      }
+
+      function getParents(parents) {
+        const result = parents
+          ?.map(getPerson)
+          .map(person => spreadData(person, false))
+
+        return result?.length > 0 ? result : undefined
+      }
+
+      function getFosterParents(parents) {
+        const result = parents
+          ?.map(getPerson)
+          .map(person => spreadData(person, false))
+
+        return result?.length > 0 ? result : undefined
+      }
 
       function spreadData(person, deep = true) {
-        const spouses = person?.spouses
-          ?.map(getPerson)
-          .map(person => spreadData(person, false))
-        const parents = person?.parents
-          ?.map(getPerson)
-          .map(person => spreadData(person, false))
+        const spouses = getSpouses(person?.spouses)
+        const parents = getParents(person?.parents)
+        const foster_parents = getFosterParents(person?.foster_parents)
         const familyName = getFamilyName(person?.familyName, person?.parents)
 
-        let children, siblings, half_siblings
+        let children, siblings, half_siblings, foster_children
 
         if (deep) {
           siblings = getSiblings(person?.id, person?.parents)
           half_siblings = getHalfSiblings(person?.id, person?.parents)
           children = getChildren(person?.id)
+          foster_children = getFosterChildren(person?.id)
         }
 
         return {
           id: person?.id,
           name: person?.name,
           familyName,
-          alias: person?.alias,
+          ...(person?.alias && { alias: person.alias }),
           ...(deep && {
             root: person?.root,
             relationships: {
-              spouses,
-              parents,
-              children,
-              siblings,
-              half_siblings,
+              ...(spouses && { spouses }),
+              ...(parents && { parents }),
+              ...(foster_parents && { foster_parents }),
+              ...(children && { children }),
+              ...(siblings && { siblings }),
+              ...(half_siblings && { half_siblings }),
 
               // nephews_nieces
               // uncles_aunts,
